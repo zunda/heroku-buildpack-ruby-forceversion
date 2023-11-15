@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# parameters
+BUILD_DIR=$1
+
+# directories
+FORCEVERSION_DIR=vendor/ruby-forceversion
+BUILD_DEST=$BUILD_DIR/app/$FORCEVERSION_DIR
+RUNTIME_DEST=/app/$FORCEVERSION_DIR
+RUNTIME_PROFILE=$BUILD_DIR/app/.profile.d
+
+# build
+mkdir -p $BUILD_DEST
+cd $BUILD_DEST
+cat <<_END > rubyversion.c
+const char ruby_description[] =
+  "ruby 3.3.0preview3 (2023-11-12 master 60e19a0b5f) [x86_64-linux]";
+_END
+gcc -c -fpic rubyversion.c
+gcc -shared -o librubyversion.so rubyversion.o
+rm rubyversion.o
+
+# environment variables
+# build
+export LD_PRELOAD="$LD_PRELOAD:$BUILD_DEST/librubyversion.so"
+
+# runtime
+mkdir -p $RUNTIME_PROFILE
+cat <<_END > $RUNTIME_PROFILE/ruby-forceversion
+export LD_PRELOAD="\$LD_PRELOAD:$RUNTIME_DEST/librubyversion.so"
+_END
